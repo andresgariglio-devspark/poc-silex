@@ -79,6 +79,28 @@ $app->post('/persons', function (Request $request, Response $response) {
             ->write(json_encode($parsedBody, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
 });
 
+$app->put('/persons/{id}', function (Request $request, Response $response, $args) {
+    $person_id = $args['id'];
+    $this->logger->addInfo("PUT person by id $person_id");
+
+    $parsedBody = $request->getParsedBody();
+    if (!$parsedBody['firstName']) {
+      return $response->withStatus(400, 'First name is required.');
+    }
+    if (!$parsedBody['lastName']) {
+      return $response->withStatus(400, 'Last name is required.');
+    }
+
+    $collection = $this->db->poc->person;
+    $person = $collection->findOneAndReplace(array('_id' => new MongoDB\BSON\ObjectID($person_id)), $parsedBody);
+
+    if ($person === NULL) return $response->withStatus(404);
+
+    return $response->withStatus(200)
+            ->withHeader("Content-Type", "application/json")
+            ->write(json_encode($parsedBody, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+});
+
 $app->delete('/persons/{id}', function (Request $request, Response $response, $args) {
     $person_id = $args['id'];
     $this->logger->addInfo("Delete person by id $person_id");
